@@ -15,5 +15,21 @@ def flip(img):
 img = cv2.imread('kobe.jpg')
 img_flip = flip(img)
 cv2.imwrite('kobe_flip.jpg',img_flip)
+
+
+# Q2
+def rotateLeft90(img):
+    height, width, _ = img.shape
+    img_rotate = np.zeros((width,height,3), np.uint8)
+    for y in range(height):
+        for x in range(width):
+            img_rotate[width-x-1][y] = img[y][x]
+    return img_rotate
+
+img = cv2.imread('curry.jpg')
+img_rotate = rotateLeft90(img)
+cv2.imwrite('curry_rotate.jpg',img_rotate)
+
+
 # cv2.imshow('img',img_flip)
 # cv2.waitKey(0)
