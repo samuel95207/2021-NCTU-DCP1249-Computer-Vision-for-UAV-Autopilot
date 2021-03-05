@@ -31,5 +31,26 @@ img_rotate = rotateLeft90(img)
 cv2.imwrite('curry_rotate.jpg',img_rotate)
 
 
+# Q3
+def nearestNeighborInterpolation(img, scale):
+    scale = int(scale)
+
+    height, width, _ = img.shape
+    height_resize = height*scale
+    width_resize = width*scale
+
+    img_resize = np.zeros((height_resize,width_resize,3), np.uint8)
+
+    for y in range(height):
+        for x in range(width):
+            img_resize[scale*y:scale*(y+1),scale*x:scale*(x+1)] = img[y][x]
+
+    return img_resize
+
+img = cv2.imread('IU.png')
+img_resize = nearestNeighborInterpolation(img,3)
+cv2.imwrite('IU_NNInterpolation.png',img_resize)
+
+
 # cv2.imshow('img',img_flip)
 # cv2.waitKey(0)
