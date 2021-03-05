@@ -32,7 +32,7 @@ cv2.imwrite('curry_rotate.jpg',img_rotate)
 
 
 # Q3
-def nearestNeighborInterpolation(img, scale):
+def interpolation_NearistNeighbor(img, scale):
     scale = int(scale)
 
     height, width, _ = img.shape
@@ -48,9 +48,11 @@ def nearestNeighborInterpolation(img, scale):
     return img_resize
 
 img = cv2.imread('IU.png')
-img_resize = nearestNeighborInterpolation(img,3)
+img_resize = interpolation_NearistNeighbor(img,3)
 cv2.imwrite('IU_NNInterpolation.png',img_resize)
 
+
+# Q4
 
 # cv2.imshow('img',img_flip)
 # cv2.waitKey(0)
