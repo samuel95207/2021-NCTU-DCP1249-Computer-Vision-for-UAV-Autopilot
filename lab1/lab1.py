@@ -31,7 +31,7 @@ print("Q2 running ...")
 img = cv2.imread('curry.jpg')
 img_rotate = rotateLeft90(img)
 cv2.imwrite('curry_rotate.jpg',img_rotate)
-print("Q2 finished")
+print("Q2 finished\n")
 
 # Q3
 def interpolation_NearistNeighbor(img, scale):
@@ -53,7 +53,7 @@ print("Q3 running ...")
 img = cv2.imread('IU.png')
 img_resize = interpolation_NearistNeighbor(img,3)
 cv2.imwrite('IU_NNInterpolation.png',img_resize)
-print("Q3 finished")
+print("Q3 finished\n")
 
 
 # Q4
@@ -86,4 +86,4 @@ print("Q4 running ...")
 img = cv2.imread('IU.png')
 img_resize = interpolation_Bilinear(img,3)
 cv2.imwrite('IU_BilinearInterpolation.png',img_resize)
-print("Q4 finished")
+print("Q4 finished\n")
