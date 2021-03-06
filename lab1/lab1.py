@@ -68,10 +68,11 @@ def interpolation_Bilinear(img, scale):
 
     for y in range(height):
         for x in range(width):
+            default = img[y][x]
             Q12 = img[y][x]
-            Q11 = img[y+1][x] if y+1 < height else 0
-            Q22 = img[y][x+1] if x+1 < width else 0
-            Q21 = img[y+1][x+1] if (y+1 < height and x+1 < width) else 0
+            Q11 = img[y+1][x] if y+1 < height else default
+            Q22 = img[y][x+1] if x+1 < width else default
+            Q21 = img[y+1][x+1] if (y+1 < height and x+1 < width) else default
             for scale_x in range(scale):
                 R1 = (scale-scale_x)/scale*Q11 + scale_x/scale*Q21
                 R2 = (scale-scale_x)/scale*Q12 + scale_x/scale*Q22
