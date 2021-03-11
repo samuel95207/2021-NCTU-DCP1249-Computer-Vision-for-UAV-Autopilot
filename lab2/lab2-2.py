@@ -6,7 +6,6 @@ def otsuThresholding(img):
     img_otsu = np.zeros((height,width,3), np.uint8)
 
     intensity_arr = np.zeros((256), np.uint32)
-    intensity_acc_arr = np.zeros((256), np.uint32)
 
     for y in range(height):
         for x in range(width):
@@ -16,11 +15,7 @@ def otsuThresholding(img):
     nB = 0
     nO = width*height
     uB = 0
-    uO = 0
-
-    for i in range(256):
-        uO += i * intensity_arr[i]
-    uO /= width*height
+    uO = np.sum([i*intensity_arr[i] for i in range(256)])/(width*height)
 
 
     sig2Between = np.zeros((256), float)
