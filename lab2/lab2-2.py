@@ -34,7 +34,7 @@ def otsuThresholding(img):
         uB = uB_new
         uO = uO_new
 
-    threshold = np.argmax(sig2Between)-1
+    threshold = np.argmax(sig2Between)
 
     print(f"threshold: {threshold} ")
 
