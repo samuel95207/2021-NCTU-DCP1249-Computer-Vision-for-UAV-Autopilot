@@ -31,7 +31,7 @@ def histogram(img):
 
 
 print("Q1 running ...")
-img = cv2.imread('mj.tif',0)
+img = cv2.imread('./inputs/mj.tif',0)
 img_histogram = histogram(img)
-cv2.imwrite('Q1.jpg',img_histogram)
+cv2.imwrite('./outputs/Q1.jpg',img_histogram)
 print("Q1 finished\n")
