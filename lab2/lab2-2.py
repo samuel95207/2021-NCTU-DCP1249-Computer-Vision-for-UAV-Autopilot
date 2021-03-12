@@ -46,7 +46,7 @@ def otsuThresholding(img):
 
 
 print("Q2 running ...")
-img = cv2.imread('input.jpg',0)
+img = cv2.imread('./inputs/input.jpg',0)
 img_otsu = otsuThresholding(img)
-cv2.imwrite('Q2.jpg',img_otsu)
+cv2.imwrite('./outputs/Q2.jpg',img_otsu)
 print("Q2 finished\n")

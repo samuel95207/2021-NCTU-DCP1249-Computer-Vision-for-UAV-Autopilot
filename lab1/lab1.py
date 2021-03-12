@@ -13,9 +13,9 @@ def flip(img):
     return img_flip
 
 print("Q1 running ...")
-img = cv2.imread('kobe.jpg')
+img = cv2.imread('./intputs/kobe.jpg')
 img_flip = flip(img)
-cv2.imwrite('kobe_flip.jpg',img_flip)
+cv2.imwrite('./outputs/kobe_flip.jpg',img_flip)
 print("Q1 finished\n")
 
 # Q2
@@ -28,9 +28,9 @@ def rotateLeft90(img):
     return img_rotate
 
 print("Q2 running ...")
-img = cv2.imread('curry.jpg')
+img = cv2.imread('./intputs/curry.jpg')
 img_rotate = rotateLeft90(img)
-cv2.imwrite('curry_rotate.jpg',img_rotate)
+cv2.imwrite('./outputs/curry_rotate.jpg',img_rotate)
 print("Q2 finished\n")
 
 # Q3
@@ -50,9 +50,9 @@ def interpolation_NearistNeighbor(img, scale):
     return img_resize
 
 print("Q3 running ...")
-img = cv2.imread('IU.png')
+img = cv2.imread('./intputs/IU.png')
 img_resize = interpolation_NearistNeighbor(img,3)
-cv2.imwrite('IU_NNInterpolation.png',img_resize)
+cv2.imwrite('./outputs/IU_NNInterpolation.png',img_resize)
 print("Q3 finished\n")
 
 
@@ -83,7 +83,7 @@ def interpolation_Bilinear(img, scale):
     return img_resize
 
 print("Q4 running ...")
-img = cv2.imread('IU.png')
+img = cv2.imread('./intputs/IU.png')
 img_resize = interpolation_Bilinear(img,3)
-cv2.imwrite('IU_BilinearInterpolation.png',img_resize)
+cv2.imwrite('./outputs/IU_BilinearInterpolation.png',img_resize)
 print("Q4 finished\n")
