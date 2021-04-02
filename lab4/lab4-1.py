@@ -49,7 +49,7 @@ cv.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-f = cv.FileStorage("lab4-1.yaml", cv.FILE_STORAGE_WRITE)
+f = cv.FileStorage("calibration.yaml", cv.FILE_STORAGE_WRITE)
 
 f.write("intrinsic", mtx)
 f.write("distortion", dist)
