@@ -8,9 +8,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 distance = 20
+x_threshold = (-10, 10)
 z_threshold = (70, 90)
 y_threshold = (-20, 10)
-x_threshold = (-10, 10)
 
 pitch_threshold = (-0.15, 0.15)
 
@@ -59,10 +59,15 @@ while True:
         # frame = \
         #     cv2.aruco.drawAxis(frame, intrinsic, distortion, rvec, tvec, 10)
 
-        linear = (round(tvec[0][0][0], 2), round(
-            tvec[0][0][1], 2), round(tvec[0][0][2], 2))
-        angular = (round(rvec[0][0][0], 2), round(
-            rvec[0][0][1], 2), round(rvec[0][0][2], 2))
+        linear = (
+            round(tvec[0][0][0], 2),
+            round(tvec[0][0][2], 2),
+            round(-tvec[0][0][1], 2))
+
+        angular = (
+            round(rvec[0][0][0], 2), 
+            round(rvec[0][0][1], 2), 
+            round(rvec[0][0][2], 2))
 
         string = f"x: {linear[0]}  y: {linear[1]} z: {linear[2]}\nraw: {angular[0]}  yaw: {angular[1]}  pitch: {angular[2]}"
 
@@ -73,20 +78,20 @@ while True:
         count %= 4
 
         if(count == 0):
-            if(linear[2] > z_threshold[1]):
+            if(linear[3] > z_threshold[1]):
                 drone.move("forward", distance)
-            elif(linear[2] < z_threshold[0]):
+            elif(linear[3] < z_threshold[0]):
                 drone.move("back", distance*1.5)
         elif(count == 1):
-            if(linear[1] < y_threshold[0]):
+            if(linear[1] > y_threshold[1]):
                 drone.move("up", distance)
-            elif(linear[1] > y_threshold[1]):
+            elif(linear[1] < y_threshold[0]):
                 drone.move("down", distance)
         elif(count == 2):
-            if(linear[0] < x_threshold[0]):
-                drone.move("left", distance)
-            elif(linear[0] > x_threshold[1]):
+            if(linear[0] < x_threshold[1]):
                 drone.move("right", distance)
+            elif(linear[0] > x_threshold[0]):
+                drone.move("left", distance)
         elif(count == 3):
             if(angular[2] > pitch_threshold[1]):
                 drone.cw(20)
