@@ -8,6 +8,8 @@ pillow = "*"
 opencv-contrib-python = "*"
 djitellopy2 = "*"
 pynput = "*"
+cmake = "*"
+dlib = "*"
 
 [dev-packages]
 autopep8 = "*"
