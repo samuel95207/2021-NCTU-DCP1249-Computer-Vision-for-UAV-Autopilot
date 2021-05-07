@@ -10,6 +10,7 @@ djitellopy2 = "*"
 pynput = "*"
 cmake = "*"
 dlib = "*"
+labelimg = "*"
 
 [dev-packages]
 autopep8 = "*"
