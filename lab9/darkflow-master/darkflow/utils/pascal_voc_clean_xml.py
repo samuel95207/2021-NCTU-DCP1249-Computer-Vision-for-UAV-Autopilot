@@ -33,7 +33,7 @@ def pascal_voc_clean_xml(ANN, pick, exclusive = False):
         sys.stdout.flush()
         
         # actual parsing 
-        in_file = open(file)
+        in_file = open(file, encoding="utf-8")
         tree=ET.parse(in_file)
         root = tree.getroot()
         jpg = str(root.find('filename').text)
