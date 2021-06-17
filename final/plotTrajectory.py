@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import json
+import math
 
 
 def parseNvm(filename, fps):
@@ -27,10 +28,7 @@ def parseNvm(filename, fps):
 
         imgIndex = int(imgFilename.split(".")[0])-1
 
-        second = round(imgIndex*(1/fps), 6)
-
-        # if(second > 40 and second < 70):
-        #     print(f'{second} {cameraPos}')
+        second = round(imgIndex*(1/fps), 3)
 
         cameraTrajectory[imgIndex] = (round(second, 6), cameraPos)
 
@@ -46,7 +44,7 @@ def parseOrbSlam(filename):
     for line in lines:
         lineData = line.split(" ")
 
-        second = lineData[0]
+        second = round(float(lineData[0]), 3)
         cameraPos = [float(i) for i in lineData[1:4]]
 
         cameraTrajectory.append((second, cameraPos))
@@ -118,64 +116,12 @@ def orbslamTransform(trajectory, params):
         #                         [ -1.46793762],
         #                         [ 2.64887193]])
 
-
         newPosMatrix = np.matmul(transferMatrix, posMatrix) + shiftMatrix
 
-
-        newPos = (newPosMatrix[0][0], newPosMatrix[1][0], newPosMatrix[2][0])
+        newPos = [newPosMatrix[0][0], newPosMatrix[1][0], newPosMatrix[2][0]]
         cameraTrajectory.append((time, newPos))
 
     return cameraTrajectory
-
-
-def renderGraph(figure, colmapTrajectory, orbSlamTrajectory):
-    colmapPosColumns = ([item[1][0] for item in colmapTrajectory], [item[1][1]
-                                                                    for item in colmapTrajectory], [item[1][2] for item in colmapTrajectory])
-    orbSlamPosColumns = ([item[1][0] for item in orbSlamTrajectory], [item[1][1]
-                                                                      for item in orbSlamTrajectory], [item[1][2] for item in orbSlamTrajectory])
-
-    ax_xy = figure.add_subplot(2, 2, 1)
-    ax_xz = figure.add_subplot(2, 2, 2)
-    ax_yz = figure.add_subplot(2, 2, 3)
-    ax_3d = figure.add_subplot(2, 2, 4, projection='3d')
-
-    ax_xy.scatter(colmapPosColumns[0],
-                  colmapPosColumns[1], c="red", marker='.', s=1, linewidths=1)
-    ax_xy.scatter(orbSlamPosColumns[0],
-                  orbSlamPosColumns[1], c="blue", marker='.', s=1, linewidths=1)
-
-    ax_xz.scatter(colmapPosColumns[0],
-                  colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
-    ax_xz.scatter(orbSlamPosColumns[0],
-                  orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
-
-    ax_yz.scatter(colmapPosColumns[1],
-                  colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
-    ax_yz.scatter(orbSlamPosColumns[1],
-                  orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
-
-    ax_3d.scatter(colmapPosColumns[0], colmapPosColumns[1],
-                  colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
-    ax_3d.scatter(orbSlamPosColumns[0], orbSlamPosColumns[1],
-                  orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
-
-    ax_xy.axis('equal')
-    ax_xy.set_xlabel('X')
-    ax_xy.set_ylabel('Y')
-
-    ax_xz.axis('equal')
-    ax_xz.set_xlabel('X')
-    ax_xz.set_ylabel('Z')
-
-    ax_yz.axis('equal')
-    ax_yz.set_xlabel('Y')
-    ax_yz.set_ylabel('Z')
-
-    ax_3d.set_box_aspect(aspect=(1, 1, 1))
-    ax_3d.set_xlabel('X')
-    ax_3d.set_ylabel('Y')
-    ax_3d.set_zlabel('Z')
-
 
 
 class Controller:
@@ -191,26 +137,26 @@ class Controller:
         self.orbSlamTrajectory = parseOrbSlam(orbSlamPath)
         self.loadParam(paramPath)
 
-
         window = tk.Tk()
         window.title('window')
         window.geometry('1000x200')
 
-        self.xRotate = tk.Scale(window, from_=-180, to=180, length=300,
+        self.xRotate = tk.Scale(window, from_=-180, to=180, length=300, label="X rotate",
                                 orient="horizontal", command=self.updateValue)
-        self.yRotate = tk.Scale(window, from_=-180, to=180, length=300,
+        self.yRotate = tk.Scale(window, from_=-180, to=180, length=300, label="Y rotate",
                                 orient="horizontal", command=self.updateValue)
-        self.zRotate = tk.Scale(window, from_=-180, to=180, length=300,
+        self.zRotate = tk.Scale(window, from_=-180, to=180, length=300, label="Z rotate",
                                 orient="horizontal", command=self.updateValue)
-        self.xOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300,
+        self.xOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, label="X Offset",
                                 orient="horizontal", command=self.updateValue)
-        self.yOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300,
+        self.yOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, label="Y Offset",
                                 orient="horizontal", command=self.updateValue)
-        self.zOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300,
+        self.zOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, label="Z Offset",
                                 orient="horizontal", command=self.updateValue)
-        self.scale = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, 
-                                orient="horizontal", command=self.updateValue)
-        self.saveParamButton = tk.Button(window, text="Save Param", command=lambda:self.saveParam(paramPath))
+        self.scale = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300,
+                              orient="horizontal", command=self.updateValue)
+        self.saveParamButton = tk.Button(
+            window, text="Save Param", command=lambda: self.saveParam(paramPath))
 
         self.xRotate.grid(column=0, row=0)
         self.yRotate.grid(column=1, row=0)
@@ -221,8 +167,6 @@ class Controller:
         self.scale.grid(column=0, row=2)
         self.saveParamButton.grid(column=1, row=2)
 
-
-
         self.xRotate.set(self.param['degree'][0])
         self.yRotate.set(self.param['degree'][1])
         self.zRotate.set(self.param['degree'][2])
@@ -230,9 +174,6 @@ class Controller:
         self.yOffset.set(self.param['offset'][1])
         self.zOffset.set(self.param['offset'][2])
         self.scale.set(self.param['scale'][0])
-
-
-
 
         transferOrbSlamTrajectory = orbslamTransform(
             self.orbSlamTrajectory, self.param)
@@ -244,9 +185,55 @@ class Controller:
 
         window.mainloop()
 
-    def updateValue(self, pos):
-        # plt.close()
+    def renderGraph(self, colmapTrajectory, orbSlamTrajectory):
+        colmapPosColumns = ([item[1][0] for item in colmapTrajectory], [item[1][1]
+                                                                        for item in colmapTrajectory], [item[1][2] for item in colmapTrajectory])
+        orbSlamPosColumns = ([item[1][0] for item in orbSlamTrajectory], [item[1][1]
+                                                                        for item in orbSlamTrajectory], [item[1][2] for item in orbSlamTrajectory])
 
+        ax_xy = self.figure.add_subplot(2, 2, 1)
+        ax_xz = self.figure.add_subplot(2, 2, 2)
+        ax_yz = self.figure.add_subplot(2, 2, 3)
+        ax_3d = self.figure.add_subplot(2, 2, 4, projection='3d')
+
+        ax_xy.scatter(colmapPosColumns[0],
+                    colmapPosColumns[1], c="red", marker='.', s=1, linewidths=1)
+        ax_xy.scatter(orbSlamPosColumns[0],
+                    orbSlamPosColumns[1], c="blue", marker='.', s=1, linewidths=1)
+
+        ax_xz.scatter(colmapPosColumns[0],
+                    colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
+        ax_xz.scatter(orbSlamPosColumns[0],
+                    orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
+
+        ax_yz.scatter(colmapPosColumns[1],
+                    colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
+        ax_yz.scatter(orbSlamPosColumns[1],
+                    orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
+
+        ax_3d.scatter(colmapPosColumns[0], colmapPosColumns[1],
+                    colmapPosColumns[2], c="red", marker='.', s=0.1, linewidths=1)
+        ax_3d.scatter(orbSlamPosColumns[0], orbSlamPosColumns[1],
+                    orbSlamPosColumns[2], c="blue", marker='o', s=5, linewidths=1)
+
+        ax_xy.axis('equal')
+        ax_xy.set_xlabel('X')
+        ax_xy.set_ylabel('Y')
+
+        ax_xz.axis('equal')
+        ax_xz.set_xlabel('X')
+        ax_xz.set_ylabel('Z')
+
+        ax_yz.axis('equal')
+        ax_yz.set_xlabel('Y')
+        ax_yz.set_ylabel('Z')
+
+        ax_3d.set_box_aspect(aspect=(1, 1, 1))
+        ax_3d.set_xlabel('X')
+        ax_3d.set_ylabel('Y')
+        ax_3d.set_zlabel('Z')
+
+    def updateValue(self, pos):
         self.param = {
             "offset":
             (self.xOffset.get(), self.yOffset.get(), self.zOffset.get()),
@@ -258,13 +245,13 @@ class Controller:
         transferOrbSlamTrajectory = orbslamTransform(
             self.orbSlamTrajectory, self.param)
 
+
         self.figure.clear()
-        renderGraph(self.figure, self.colmapTrajectory,
-                    transferOrbSlamTrajectory)
+        self.renderGraph(self.colmapTrajectory, transferOrbSlamTrajectory)
 
         plt.draw()
 
-        # plt.show(block=False)
+        self.calculateError()
 
 
     def loadParam(self, filepath):
@@ -273,25 +260,51 @@ class Controller:
             self.param = json.load(file)
         else:
             self.param = {
-            "offset":
-            (-2.9, -1.3, 1.6),
-            "degree":
-            (74, 55, 125),
-            "scale": (4.5, 4.5, 4.5)
-        }
+                "offset":
+                (-2.9, -1.3, 1.6),
+                "degree":
+                (74, 55, 125),
+                "scale": (4.5, 4.5, 4.5)
+            }
 
     def saveParam(self, filepath):
-        file = open(filepath,'w')
+        file = open(filepath, 'w')
         json.dump(self.param, file)
 
+    def calculateError(self):
+        transferOrbSlamTrajectory = orbslamTransform(
+            self.orbSlamTrajectory, self.param)
+
+        # (timestamp, pos)
+        # print(transferOrbSlamTrajectory)
+        # print(self.colmapTrajectory)
+
+        x = transferOrbSlamTrajectory
+        y = self.colmapTrajectory
+        dict = {}
+        for obj in x:
+            timeStamp = obj[0]
+            pos = obj[1]
+            dict[timeStamp] = pos
+            # print(dict)
+
+        count = 0
+        d_square = 0
+        for obj in y:
+            timeStamp = obj[0]
+            if timeStamp in dict:
+                count+=1
+                p1 = dict[timeStamp]
+                p2 = obj[1]
+                d_square += (p1[0]-p2[0])**2 + \
+                    (p1[1]-p2[1]) ** 2 + (p1[2]-p2[2])**2
+
+        RMSE = math.sqrt(d_square)
+        print(f'RMSE: {RMSE}')
+
+        return RMSE
 
 
 
 
 myControl = Controller()
-
-
-# 67.4  [1.74794, -1.38784, 2.74392] -0.3748021 -0.6775266 0.6571839
-# 51.0  [-0.871686, 1.41934, -2.61509] 0.9050288 -0.5900814 0.5575801
-# 42.9  [-3.26053, -0.71568, 1.18936]  0.3260848 -0.0745549 0.0602215
-# 61.6  [-3.00876, -0.673189, 1.24175]  0.2542186 -0.0603289 0.0653356
