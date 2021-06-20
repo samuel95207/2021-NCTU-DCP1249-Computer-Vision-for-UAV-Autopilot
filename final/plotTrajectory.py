@@ -126,20 +126,29 @@ def orbslamTransform(trajectory, params):
 
 class Controller:
 
+    colmapPath = "./trajectory/desk_0611/colmap.nvm"
+    orbSlamPath = "./trajectory/desk_0611/orbslam.txt"
+    paramPath = './trajectory/desk_0611/param.json'
+    fps = 30
+
     def __init__(self):
-        colmapPath = "./trajectory/desk_0611/colmap.nvm"
-        orbSlamPath = "./trajectory/desk_0611/orbslam.txt"
-        paramPath = './trajectory/desk_0611/param'
+        self.colmapTrajectory = parseNvm(self.colmapPath, self.fps)
+        self.orbSlamTrajectory = parseOrbSlam(self.orbSlamPath)
+        self.loadParam(self.paramPath)
 
-        fps = 30
+        transferOrbSlamTrajectory = orbslamTransform(
+            self.orbSlamTrajectory, self.param)
 
-        self.colmapTrajectory = parseNvm(colmapPath, fps)
-        self.orbSlamTrajectory = parseOrbSlam(orbSlamPath)
-        self.loadParam(paramPath)
+        self.figure, self.axs = plt.subplots(2, 2)
+        self.renderGraph(self.colmapTrajectory, transferOrbSlamTrajectory)
+        plt.show(block=False)
 
+        self._tkinterSetup()
+
+    def _tkinterSetup(self):
         window = tk.Tk()
         window.title('window')
-        window.geometry('1000x200')
+        window.geometry('1200x200')
 
         self.xRotate = tk.Scale(window, from_=-180, to=180, length=300, label="X rotate",
                                 orient="horizontal", command=self.updateValue)
@@ -153,10 +162,16 @@ class Controller:
                                 orient="horizontal", command=self.updateValue)
         self.zOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, label="Z Offset",
                                 orient="horizontal", command=self.updateValue)
-        self.scale = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300,
+        self.scale = tk.Scale(window, from_=0, to=5, resolution=0.1, length=300,
                               orient="horizontal", command=self.updateValue)
         self.saveParamButton = tk.Button(
-            window, text="Save Param", command=lambda: self.saveParam(paramPath))
+            window, text="Save Param", command=lambda: self.saveParam(self.paramPath))
+
+        self.autoTuneButton = tk.Button(
+            window, text="Auto Tune", command=self.autoTuneParam)
+
+        self.errorText = tk.Label(
+            window, text=f"R Square: {self.calculateR2()}")
 
         self.xRotate.grid(column=0, row=0)
         self.yRotate.grid(column=1, row=0)
@@ -166,6 +181,8 @@ class Controller:
         self.zOffset.grid(column=2, row=1)
         self.scale.grid(column=0, row=2)
         self.saveParamButton.grid(column=1, row=2)
+        self.autoTuneButton.grid(column=2, row=2)
+        self.errorText.grid(column=3, row=2)
 
         self.xRotate.set(self.param['degree'][0])
         self.yRotate.set(self.param['degree'][1])
@@ -175,21 +192,13 @@ class Controller:
         self.zOffset.set(self.param['offset'][2])
         self.scale.set(self.param['scale'][0])
 
-        transferOrbSlamTrajectory = orbslamTransform(
-            self.orbSlamTrajectory, self.param)
-
-        self.figure, self.axs = plt.subplots(2, 2)
-        renderGraph(self.figure, self.colmapTrajectory,
-                    transferOrbSlamTrajectory)
-        plt.show(block=False)
-
         window.mainloop()
 
     def renderGraph(self, colmapTrajectory, orbSlamTrajectory):
         colmapPosColumns = ([item[1][0] for item in colmapTrajectory], [item[1][1]
                                                                         for item in colmapTrajectory], [item[1][2] for item in colmapTrajectory])
         orbSlamPosColumns = ([item[1][0] for item in orbSlamTrajectory], [item[1][1]
-                                                                        for item in orbSlamTrajectory], [item[1][2] for item in orbSlamTrajectory])
+                                                                          for item in orbSlamTrajectory], [item[1][2] for item in orbSlamTrajectory])
 
         ax_xy = self.figure.add_subplot(2, 2, 1)
         ax_xz = self.figure.add_subplot(2, 2, 2)
@@ -197,24 +206,24 @@ class Controller:
         ax_3d = self.figure.add_subplot(2, 2, 4, projection='3d')
 
         ax_xy.scatter(colmapPosColumns[0],
-                    colmapPosColumns[1], c="red", marker='.', s=1, linewidths=1)
+                      colmapPosColumns[1], c="red", marker='.', s=1, linewidths=1, label='Colmap')
         ax_xy.scatter(orbSlamPosColumns[0],
-                    orbSlamPosColumns[1], c="blue", marker='.', s=1, linewidths=1)
+                      orbSlamPosColumns[1], c="blue", marker='.', s=1, linewidths=1, label='Orb Slam')
 
         ax_xz.scatter(colmapPosColumns[0],
-                    colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
+                      colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1, label='Colmap')
         ax_xz.scatter(orbSlamPosColumns[0],
-                    orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
+                      orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1, label='Orb Slam')
 
         ax_yz.scatter(colmapPosColumns[1],
-                    colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1)
+                      colmapPosColumns[2], c="red", marker='.', s=1, linewidths=1, label='Colmap')
         ax_yz.scatter(orbSlamPosColumns[1],
-                    orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1)
+                      orbSlamPosColumns[2], c="blue", marker='.', s=1, linewidths=1, label='Orb Slam')
 
         ax_3d.scatter(colmapPosColumns[0], colmapPosColumns[1],
-                    colmapPosColumns[2], c="red", marker='.', s=0.1, linewidths=1)
+                      colmapPosColumns[2], c="red", marker='.', s=0.1, linewidths=1, label='Colmap')
         ax_3d.scatter(orbSlamPosColumns[0], orbSlamPosColumns[1],
-                    orbSlamPosColumns[2], c="blue", marker='o', s=5, linewidths=1)
+                      orbSlamPosColumns[2], c="blue", marker='o', s=5, linewidths=1, label='Orb Slam')
 
         ax_xy.axis('equal')
         ax_xy.set_xlabel('X')
@@ -245,14 +254,13 @@ class Controller:
         transferOrbSlamTrajectory = orbslamTransform(
             self.orbSlamTrajectory, self.param)
 
-
         self.figure.clear()
         self.renderGraph(self.colmapTrajectory, transferOrbSlamTrajectory)
 
         plt.draw()
+        plt.legend()
 
-        self.calculateError()
-
+        self.errorText["text"] = (f"R Square: {self.calculateR2()}")
 
     def loadParam(self, filepath):
         if(os.path.exists(filepath)):
@@ -271,7 +279,7 @@ class Controller:
         file = open(filepath, 'w')
         json.dump(self.param, file)
 
-    def calculateError(self):
+    def calculateR2(self):
         transferOrbSlamTrajectory = orbslamTransform(
             self.orbSlamTrajectory, self.param)
 
@@ -289,21 +297,95 @@ class Controller:
             # print(dict)
 
         count = 0
-        d_square = 0
+        SSres = 0
+        SStot = 0
+
+        pos_sum = np.array([0.0, 0.0, 0.0])
         for obj in y:
             timeStamp = obj[0]
             if timeStamp in dict:
-                count+=1
-                p1 = dict[timeStamp]
-                p2 = obj[1]
-                d_square += (p1[0]-p2[0])**2 + \
+                count += 1
+                p1 = obj[1]
+                p2 = dict[timeStamp]
+                pos_sum += p1
+                SSres += (p1[0]-p2[0])**2 + \
+                    (p1[1]-p2[1]) ** 2 + (p1[2]-p2[2])**2
+        pos_avg = pos_sum / count
+
+        for obj in y:
+            timeStamp = obj[0]
+            if timeStamp in dict:
+                p1 = obj[1]
+                p2 = pos_avg
+                SStot += (p1[0]-p2[0])**2 + \
                     (p1[1]-p2[1]) ** 2 + (p1[2]-p2[2])**2
 
-        RMSE = math.sqrt(d_square)
+        RMSE = math.sqrt(SSres / count)
+        R_square = 1 - SSres/SStot
         print(f'RMSE: {RMSE}')
+        print(f'R2: {R_square}')
 
-        return RMSE
+        return R_square
 
+    def autoTuneParam(self):
+        xRotateRange = range(
+            self.param["degree"][0]-5, self.param["degree"][0]+5)
+        yRotateRange = range(
+            self.param["degree"][1]-5, self.param["degree"][1]+5)
+        zRotateRange = range(
+            self.param["degree"][2]-5, self.param["degree"][2]+5)
+
+        xOffsetRange = np.arange(
+            self.param["offset"][0]-0.2, self.param["offset"][0]+0.2, 0.1)
+        yOffsetRange = np.arange(
+            self.param["offset"][1]-0.2, self.param["offset"][1]+0.2, 0.1)
+        zOffsetRange = np.arange(
+            self.param["offset"][2]-0.2, self.param["offset"][2]+0.2, 0.1)
+
+        scaleRange = np.arange(
+            self.param["scale"][0]-0.2, self.param["scale"][0]+0.2, 0.1)
+
+        bestParam = self.param
+        bestR2 = self.calculateR2()
+
+        for scale in scaleRange:
+            for xRotate in xRotateRange:
+                for yRotate in yRotateRange:
+                    for zRotate in zRotateRange:
+                        for xOffset in xOffsetRange:
+                            for yOffset in yOffsetRange:
+                                for zOffset in zOffsetRange:
+                                    self.param = {
+                                        "offset":
+                                        (xOffset, yOffset, zOffset),
+                                        "degree":
+                                        (xRotate, yRotate, zRotate),
+                                        "scale": (scale, scale, scale)
+                                    }
+
+                                    transferOrbSlamTrajectory = orbslamTransform(
+                                        self.orbSlamTrajectory, self.param)
+
+                                    print(self.param)
+                                    r2 = self.calculateR2()
+
+                                    if(r2 < bestR2):
+                                        bestParam = self.param
+                                        bestR2 = r2
+        print("Best Param: ",end="")
+        print(bestParam)
+        print("Best R Square: ",end="")
+        print(bestR2)
+
+        self.param = bestParam
+        self.xRotate.set(bestParam['degree'][0])
+        self.yRotate.set(bestParam['degree'][1])
+        self.zRotate.set(bestParam['degree'][2])
+        self.xOffset.set(bestParam['offset'][0])
+        self.yOffset.set(bestParam['offset'][1])
+        self.zOffset.set(bestParam['offset'][2])
+        self.scale.set(bestParam['scale'][0])
+        self.errorText["text"] = (f"R Square: {bestR2}")
 
 
 
