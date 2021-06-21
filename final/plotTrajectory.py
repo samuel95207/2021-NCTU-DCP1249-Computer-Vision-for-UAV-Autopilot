@@ -6,6 +6,7 @@ import json
 import math
 
 
+# Read and parse colmap NVM file
 def parseNvm(filename, fps):
     file = open(filename)
 
@@ -34,7 +35,7 @@ def parseNvm(filename, fps):
 
     return cameraTrajectory
 
-
+# Read and parse Orb Slam file
 def parseOrbSlam(filename):
     file = open(filename)
     lines = file.readlines()
@@ -52,9 +53,11 @@ def parseOrbSlam(filename):
     return cameraTrajectory
 
 
+# Transform orbslam coordinate system to match colmap
 def orbslamTransform(trajectory, params):
     cameraTrajectory = []
 
+    # Iterate througn all position in orbslam
     for item in trajectory:
         time = item[0]
         pos = item[1]
@@ -62,6 +65,7 @@ def orbslamTransform(trajectory, params):
         y = pos[1]
         z = pos[2]
 
+        # get parameter from param dictionary
         xDeg = params["degree"][0]
         yDeg = params["degree"][1]
         zDeg = params["degree"][2]
@@ -102,19 +106,10 @@ def orbslamTransform(trajectory, params):
                                 [yOffset],
                                 [zOffset]])
 
-        # newPos = (-4*x+0.2, -4*y-1.8, z)
         transferMatrix = \
             np.matmul(ZrotateMatrix,
                       np.matmul(YrotateMatrix,
                                 np.matmul(XrotateMatrix, scaleMatrix)))
-
-        # transferMatrix = np.array([[-1.46862857,  5.78274528, 12.50658204],
-        #                           [2.43946566, 10.77358724, 12.62022154],
-        #                           [-4.53691127, -13.3943088,  -16.25176196]])
-
-        # shiftMatrix = np.array([[-3.10366568],
-        #                         [ -1.46793762],
-        #                         [ 2.64887193]])
 
         newPosMatrix = np.matmul(transferMatrix, posMatrix) + shiftMatrix
 
@@ -123,7 +118,7 @@ def orbslamTransform(trajectory, params):
 
     return cameraTrajectory
 
-
+# GUI interface for tuning
 class Controller:
 
     colmapPath = "./trajectory/desk_0611/colmap.nvm"
@@ -145,6 +140,7 @@ class Controller:
 
         self._tkinterSetup()
 
+    # Setup tkinter gui components
     def _tkinterSetup(self):
         window = tk.Tk()
         window.title('window')
@@ -162,7 +158,7 @@ class Controller:
                                 orient="horizontal", command=self.updateValue)
         self.zOffset = tk.Scale(window, from_=-5, to=5, resolution=0.1, length=300, label="Z Offset",
                                 orient="horizontal", command=self.updateValue)
-        self.scale = tk.Scale(window, from_=0, to=5, resolution=0.1, length=300,
+        self.scale = tk.Scale(window, from_=0, to=7, resolution=0.1, length=300,
                               orient="horizontal", command=self.updateValue)
         self.saveParamButton = tk.Button(
             window, text="Save Param", command=lambda: self.saveParam(self.paramPath))
@@ -194,6 +190,7 @@ class Controller:
 
         window.mainloop()
 
+    # Render matplotlib plots 
     def renderGraph(self, colmapTrajectory, orbSlamTrajectory):
         colmapPosColumns = ([item[1][0] for item in colmapTrajectory], [item[1][1]
                                                                         for item in colmapTrajectory], [item[1][2] for item in colmapTrajectory])
@@ -242,6 +239,7 @@ class Controller:
         ax_3d.set_ylabel('Y')
         ax_3d.set_zlabel('Z')
 
+    #  Event listener for tkinters update
     def updateValue(self, pos):
         self.param = {
             "offset":
@@ -262,6 +260,7 @@ class Controller:
 
         self.errorText["text"] = (f"R Square: {self.calculateR2()}")
 
+    # load param from file 
     def loadParam(self, filepath):
         if(os.path.exists(filepath)):
             file = open(filepath)
@@ -269,16 +268,18 @@ class Controller:
         else:
             self.param = {
                 "offset":
-                (-2.9, -1.3, 1.6),
+                (-3.1, -1.3, 2.4),
                 "degree":
-                (74, 55, 125),
-                "scale": (4.5, 4.5, 4.5)
+                (73, 57, 125),
+                "scale": (4.9, 4.9, 4.9)
             }
 
+    # Save param to file
     def saveParam(self, filepath):
         file = open(filepath, 'w')
         json.dump(self.param, file)
 
+    # Calculate R square between orbslam and colmap
     def calculateR2(self):
         transferOrbSlamTrajectory = orbslamTransform(
             self.orbSlamTrajectory, self.param)
@@ -327,6 +328,7 @@ class Controller:
 
         return R_square
 
+    # Auto tune orbslam transform to gain max R square
     def autoTuneParam(self):
         xRotateRange = range(
             self.param["degree"][0]-5, self.param["degree"][0]+5)
